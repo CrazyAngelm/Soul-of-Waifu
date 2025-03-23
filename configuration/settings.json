@@ -21,9 +21,9 @@
         "max_tokens": 100
     },
     "user_data": {
-        "user_name": "",
+        "user_name": "Albert",
         "user_description": "",
         "user_avatar": "",
-        "current_character_image":
+        "current_character_image": ""
     }
 }

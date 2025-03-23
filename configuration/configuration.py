@@ -1,5 +1,6 @@
 import os
 import json
+from dotenv import load_dotenv, set_key, find_dotenv
 
 class ConfigurationSettings():
     """
@@ -104,50 +105,84 @@ class ConfigurationSettings():
     
 class ConfigurationAPI():
     """
-    Configuration file with API-tokens.
+    Configuration class for managing API tokens using .env file.
     """
     def __init__(self):
-        self.api_tokens_path = "configuration/api.json"
+        self.env_path = "configuration/.env"
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(self.env_path), exist_ok=True)
+        # Create the file if it doesn't exist
+        if not os.path.exists(self.env_path):
+            with open(self.env_path, 'w', encoding='utf-8') as f:
+                f.write('# API Tokens Configuration\n')
+        
+        # Load the environment variables
+        load_dotenv(self.env_path)
 
     def load_configuration(self):
         """
-        Loading configuration data from a file.
+        Loading configuration data from .env file.
+        Returns a dictionary of all environment variables.
         """
-        if not os.path.exists(self.api_tokens_path):
+        if not os.path.exists(self.env_path):
             return {}
-        with open(self.api_tokens_path, 'r', encoding='utf-8') as file:
-            return json.load(file)
+            
+        # Reload to ensure we have the latest values
+        load_dotenv(self.env_path, override=True)
+        
+        # Get all environment variables that are set in the .env file
+        env_vars = {}
+        with open(self.env_path, 'r', encoding='utf-8') as file:
+            for line in file:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    env_vars[key] = value.strip('"\'')
+        return env_vars
 
     def save_configuration(self):
         """
-        Saving the current configuration data to a file.
+        Saving the current configuration data to the .env file.
+        This method is kept for compatibility but does nothing as .env is modified in-place.
         """
-        configuration_data = self.load_configuration()
-        with open(self.api_tokens_path, 'w', encoding="utf-8") as file:
-            json.dump(configuration_data, file, ensure_ascii=False, indent=4)
+        pass  # No need to do anything as we're updating the file directly with set_key
 
     def save_configuration_edit(self, data):
         """
-        Saving the current configuration data to a file.
+        Overwrites the entire .env file with new data.
+        
+        Args:
+            data (dict): Dictionary of variables to save.
         """
-        with open(self.api_tokens_path, 'w', encoding="utf-8") as file:
-            json.dump(data, file, ensure_ascii=False, indent=4)
+        with open(self.env_path, 'w', encoding='utf-8') as file:
+            file.write('# API Tokens Configuration\n')
+            for key, value in data.items():
+                file.write(f"{key}={value}\n")
     
     def save_api_token(self, variable, variable_value):
         """
-        Saves the API value to a configuration file.
+        Saves the API value to the .env file.
         
         Args:
             variable (str): Variable name.
             variable_value (any): Variable value.
         """
-        configuration_data = self.load_configuration()
-        configuration_data[variable] = variable_value
-        self.save_configuration_edit(configuration_data)
+        # Use dotenv's set_key to update or add the variable
+        set_key(self.env_path, variable, str(variable_value))
+        # Reload the environment to make the change available
+        load_dotenv(self.env_path, override=True)
 
     def get_token(self, api):
-        configuration_data = self.load_configuration()
-        return configuration_data.get(api)
+        """
+        Gets the API token value from environment variables.
+        
+        Args:
+            api (str): API name/key to retrieve.
+            
+        Returns:
+            str: The API token value or None if not found.
+        """
+        return os.getenv(api)
 
 class ConfigurationCharacters():
     """
